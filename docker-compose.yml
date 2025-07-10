@@ -12,3 +12,15 @@ services:
       dockerfile: go-server/Dockerfile
     ports:
       - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:5001
+    depends_on:
+      - flask-server
+      - go-server

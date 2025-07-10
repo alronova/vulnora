@@ -77,7 +77,7 @@ socksio==1.0.0
 sortedcontainers==2.4.0
 soupsieve==2.7
 SQLAlchemy==2.0.40
-sspilib==0.3.1
+sspilib==0.3.1; sys_platform == "win32"
 structlog==24.4.0
 tld==0.13
 tornado==6.4.2
