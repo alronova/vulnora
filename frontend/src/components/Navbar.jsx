@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
-import api from "../components/api";LayoutDashboard
+import api from "../components/api";
 import { Shield, Home, History, Info, UserCircle, LogOut, X, LayoutDashboard } from 'lucide-react';
 import { handleError } from './utils';
 
@@ -15,46 +15,54 @@ const Navbar = () => {
       navigate("/login");
     }, 1500);
   };
+
   // State to manage the visibility of the profile card.
   const [showProfileCard, setShowProfileCard] = useState(false);
-  const [userData, setUserData] = useState({});
+  const [userData, setUserData] = useState({
+    username: '',
+    email: '',
+    attacks_count: 0
+  });
 
   const fetchUserData = async () => {
     try {
-      const res = await api.get('/api/user/profile');
+      const res = await api.get('/api/auth/getUserInfo');
       const data = await res.data;
-      setUserData(data);
+      if (data && data.data) {
+        setUserData(data.data);
+      }
     } catch (err) {
       handleError('Error fetching user data:', err);
-      setTimeout(() => {
-        Logout();
-        navigate("/login");
-      }, 1500);
     }
   };
+
+  // Fetch user data when component mounts
+  useEffect(() => {
+    fetchUserData();
+  }, []);
 
   // The main JSX for the Navbar.
   return (
     <nav className="fixed top-0 inset-x-0 z-20 bg-black/40 backdrop-blur-md rounded-b-xl px-6 py-4 shadow-xl">
       <div className="container mx-auto flex items-center justify-between">
         {/* Logo/App Title */}
-        <a href="#" className="flex items-center text-white text-xl font-bold tracking-wider">
+        <a className="flex items-center text-white text-xl font-bold tracking-wider" href="#">
           <Shield className="w-8 h-8 mr-2 text-green-400" />
           VULN<span className="text-green-400">ORA</span>
         </a>
 
         {/* Navigation Links */}
         <div className="flex items-center space-x-6">
-          <Link to="/" className="flex items-center text-gray-400 hover:text-green-400 transition-colors">
+          <Link className="flex items-center text-gray-400 hover:text-green-400 transition-colors" to="/">
             <Home className="w-5 h-5 mr-1" /> Home
           </Link>
-          <Link to="/home" className="flex items-center text-gray-400 hover:text-green-400 transition-colors">
+          <Link className="flex items-center text-gray-400 hover:text-green-400 transition-colors" to="/home">
             <LayoutDashboard className="w-5 h-5 mr-1" /> Dashboard
           </Link>
-          <Link to="/history" className="flex items-center text-gray-400 hover:text-green-400 transition-colors">
+          <Link className="flex items-center text-gray-400 hover:text-green-400 transition-colors" to="/history">
             <History className="w-5 h-5 mr-1" /> History
           </Link>
-          <Link to="/#about" className="flex items-center text-gray-400 hover:text-green-400 transition-colors">
+          <Link className="flex items-center text-gray-400 hover:text-green-400 transition-colors" to="/#about">
             <Info className="w-5 h-5 mr-1" /> About
           </Link>
         </div>
@@ -82,15 +90,17 @@ const Navbar = () => {
               <div className="flex items-center mb-4">
                 <UserCircle className="w-10 h-10 text-green-400 mr-3" />
                 <div>
-                  <h4 className="font-bold text-lg">{userData.firstName}</h4>
-                  <p className="text-xs text-gray-400">{userData.email}</p>
+                  <h4 className="font-bold text-lg">{userData.username || 'User'}</h4>
+                  <p className="text-xs text-gray-400">{userData.email || ''}</p>
                 </div>
               </div>
+
               <div className="text-sm border-t border-gray-700 pt-3 mb-3">
-                <p className="text-gray-300">Scans Completed: <span className="text-green-400 font-semibold">
-                  {/* {userData.scansDone} */} XX {/*TODO: replace with actual value*/}
+                <p className="text-gray-300">Attacks Run: <span className="text-green-400 font-semibold">
+                  {userData.attacks_count || 0}
                   </span></p>
               </div>
+
               <button
                 onClick={() => {
                   Logout();
