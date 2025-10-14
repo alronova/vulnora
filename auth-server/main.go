@@ -22,7 +22,6 @@ var (
 )
 
 func main() {
-
 	// Load Env Variables
 	err := godotenv.Load()
 	if err != nil {
@@ -70,6 +69,7 @@ func main() {
 		{
 			auth.POST("/signup", signupHandler)
 			auth.POST("/login", loginHandler)
+			auth.GET("/getUserInfo", authMiddleware(), getUserInfoHandler)
 		}
 	}
 
@@ -97,7 +97,6 @@ func conn_DB() error {
 	}
 
 	dbName := os.Getenv("DATABASE_NAME")
-
 	db = mongo_client.Database(dbName)
 	usersColl = db.Collection("auth")
 	reportsColl = db.Collection("reports")
