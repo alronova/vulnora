@@ -149,6 +149,7 @@ func getReportsHandler(c *gin.Context) {
 
 	var reports []Report
 	filter := bson.M{"user_id": userID}
+
 	cursor, err := reportsColl.Find(ctx, filter)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -190,5 +191,66 @@ func getReportsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Reports fetched successfully",
 		Data:    reports,
+	})
+}
+
+// New handler to get user information
+func getUserInfoHandler(c *gin.Context) {
+	userID := c.GetString("userID")
+	log.Println("[DEBUG] Getting user info for userID:", userID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	// Convert userID string to ObjectID
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_user_id",
+			Message: "Invalid user ID format",
+		})
+		return
+	}
+
+	// Find user by ID
+	var user User
+	err = usersColl.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error:   "user_not_found",
+				Message: "User not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "database_error",
+			Message: "Failed to fetch user information",
+		})
+		return
+	}
+
+	// Count number of reports (attacks) for this user
+	reportsCount, err := reportsColl.CountDocuments(ctx, bson.M{"user_id": userID})
+	if err != nil {
+		log.Println("[ERROR] Failed to count reports:", err)
+		// Continue even if count fails, just set to 0
+		reportsCount = 0
+	}
+
+	// Prepare response with user info
+	userInfo := map[string]interface{}{
+		"user_id":       user.ID.Hex(),
+		"email":         user.Email,
+		"first_name":    user.FirstName,
+		"last_name":     user.LastName,
+		"username":      user.FirstName + " " + user.LastName,
+		"attacks_count": reportsCount,
+		"created_at":    user.CreatedAt,
+	}
+
+	c.JSON(http.StatusOK, SuccessResponse{
+		Message: "User information fetched successfully",
+		Data:    userInfo,
 	})
 }
